@@ -1,3 +1,5 @@
+"""nOracle module for price oracle functionality."""
+
 module(
     name = "noracle",
     version = "0.1.0",
