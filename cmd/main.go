@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/nbitslabs/nOracle/internal/oracle"
 	"github.com/nbitslabs/nOracle/pkg/connector"
@@ -13,13 +14,20 @@ import (
 
 var configPath = env.Get("CONFIG_PATH", "config.yaml")
 
+func init() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	})))
+}
+
 func main() {
 	slog.Info("Starting nOracle", "config_path", configPath)
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, os.Kill)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	exit := make(chan struct{})
 
-	service, err := oracle.NewServices(context.Background(), configPath)
+	service, err := oracle.NewServices(ctx, configPath)
 	if err != nil {
 		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
@@ -28,11 +36,11 @@ func main() {
 	out := make(chan connector.TickerUpdate)
 	for _, exchange := range service.Exchanges {
 		slog.Info("Streaming tickers", "name", exchange.Name())
-		go exchange.StreamTickers(context.Background(), out)
+		go exchange.StreamTickers(ctx, out)
 		defer exchange.Close()
 	}
 
 	slog.Info("nOracle started")
-	<-sig
+	<-ctx.Done()
 	close(exit)
 }
