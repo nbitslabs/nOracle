@@ -25,3 +25,18 @@ jobs:
         run: bazel build //...
       - name: Test
         run: bazel test //...
+
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Push Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: build.Dockerfile
+          tags: oracle
+          push: false
