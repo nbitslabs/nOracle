@@ -2,27 +2,37 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"os/signal"
 
+	"github.com/nbitslabs/nOracle/internal/oracle"
 	"github.com/nbitslabs/nOracle/pkg/connector"
-	"github.com/nbitslabs/nOracle/pkg/connector/binance"
+	"github.com/nbitslabs/nOracle/pkg/utils/env"
 )
 
+var configPath = env.Get("CONFIG_PATH", "config.yaml")
+
 func main() {
+	slog.Info("Starting nOracle", "config_path", configPath)
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	exit := make(chan struct{})
 
-	c, err := binance.NewConnector(context.Background(), "wss://stream.binance.com:443", []connector.Symbol{"BTCUSDT", "ETHUSDT"})
+	service, err := oracle.NewServices(context.Background(), configPath)
 	if err != nil {
-		panic(err)
+		slog.Error("Failed to load config", "error", err)
+		os.Exit(1)
 	}
-	defer c.Close()
 
 	out := make(chan connector.TickerUpdate)
-	go c.StreamTickers(context.Background(), out)
+	for _, exchange := range service.Exchanges {
+		slog.Info("Streaming tickers", "name", exchange.Name())
+		go exchange.StreamTickers(context.Background(), out)
+		defer exchange.Close()
+	}
 
+	slog.Info("nOracle started")
 	<-sig
 	close(exit)
 }

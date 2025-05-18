@@ -11,7 +11,7 @@ import (
 	"github.com/nbitslabs/nOracle/pkg/connector"
 )
 
-func NewConnector(ctx context.Context, wsUrl string, pairs []connector.Symbol) (connector.ExchangeConnector, error) {
+func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
 	if wsUrl == "" {
 		return nil, fmt.Errorf("wsUrl is required")
 	}
@@ -21,7 +21,7 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []connector.Symbol) (
 
 	channels := []string{}
 	for _, pair := range pairs {
-		channels = append(channels, fmt.Sprintf("%s@ticker", pair.String()))
+		channels = append(channels, fmt.Sprintf("%s@ticker", strings.ToLower(pair)))
 	}
 
 	wsUrlWithChannels := fmt.Sprintf("%s/stream?streams=%s", wsUrl, strings.Join(channels, "/"))
@@ -70,7 +70,7 @@ func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.Tick
 
 				out <- connector.TickerUpdate{
 					Exchange:  Name,
-					Symbol:    connector.Symbol(t.Stream.Symbol),
+					Symbol:    t.Stream.Symbol,
 					Price:     t.Stream.LastPrice,
 					Volume:    t.Stream.Volume,
 					Timestamp: t.Stream.EventTime,
@@ -82,10 +82,10 @@ func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.Tick
 	return nil
 }
 
-func (c *Connector) Name() connector.Exchange {
+func (c *Connector) Name() string {
 	return Name
 }
 
-func (c *Connector) Tickers() []connector.Symbol {
+func (c *Connector) Tickers() []string {
 	return c.pairs
 }

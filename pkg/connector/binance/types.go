@@ -5,17 +5,16 @@ import (
 	"math/big"
 
 	"github.com/gorilla/websocket"
-	"github.com/nbitslabs/nOracle/pkg/connector"
 )
 
 type Connector struct {
 	ctx   context.Context
-	pairs []connector.Symbol
+	pairs []string
 
 	ws *websocket.Conn
 }
 
-const Name = connector.Exchange("binance")
+const Name = "binance"
 
 type Ticker struct {
 	Name   string       `json:"stream"`
