@@ -26,3 +26,6 @@ go.work.sum
 
 # Config file
 config.yaml
+
+# Bazel files
+bazel-*

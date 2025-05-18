@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "config",
+    srcs = [
+        "exchange.go",
+        "loader.go",
+    ],
+    importpath = "github.com/nbitslabs/nOracle/pkg/config",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/connector",
+        "//pkg/connector/binance",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)

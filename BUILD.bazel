@@ -1,0 +1,4 @@
+load("@gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/nbitslabs/nOracle
+gazelle(name = "gazelle")
