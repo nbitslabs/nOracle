@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "storage",
+    srcs = [
+        "memory.go",
+        "types.go",
+    ],
+    importpath = "github.com/nbitslabs/nOracle/pkg/storage",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "storage_test",
+    srcs = ["memory_test.go"],
+    embed = [":storage"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

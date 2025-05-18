@@ -1,0 +1,13 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ticker",
+    srcs = ["handler.go"],
+    importpath = "github.com/nbitslabs/nOracle/internal/route/ticker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//pkg/connector",
+        "//pkg/storage",
+        "@com_github_gin_gonic_gin//:gin",
+    ],
+)

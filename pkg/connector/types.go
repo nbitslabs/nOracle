@@ -13,9 +13,9 @@ type ExchangeConnector interface {
 }
 
 type TickerUpdate struct {
-	Exchange  string
-	Symbol    string
-	Price     *big.Float
-	Volume    *big.Float
-	Timestamp int64
+	Exchange  string     `json:"exchange"`
+	Symbol    string     `json:"symbol"`
+	Price     *big.Float `json:"price"`
+	Volume    *big.Float `json:"volume"`
+	Timestamp int64      `json:"timestamp"`
 }

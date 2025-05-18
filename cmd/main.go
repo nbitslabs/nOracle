@@ -7,8 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gin-gonic/gin"
 	"github.com/nbitslabs/nOracle/internal/oracle"
+	"github.com/nbitslabs/nOracle/internal/route/ticker"
 	"github.com/nbitslabs/nOracle/pkg/connector"
+	"github.com/nbitslabs/nOracle/pkg/storage"
 	"github.com/nbitslabs/nOracle/pkg/utils/env"
 )
 
@@ -25,14 +28,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	exit := make(chan struct{})
-
 	service, err := oracle.NewServices(ctx, configPath)
 	if err != nil {
 		slog.Error("Failed to load config", "error", err)
 		os.Exit(1)
 	}
 
+	tickerStore := storage.NewMemory[connector.TickerUpdate]()
 	out := make(chan connector.TickerUpdate)
 	for _, exchange := range service.Exchanges {
 		slog.Info("Streaming tickers", "name", exchange.Name())
@@ -40,7 +42,19 @@ func main() {
 		defer exchange.Close()
 	}
 
+	// Initialize APIs
+	tickerAPI := ticker.NewAPI(ctx, tickerStore, out)
+
+	router := gin.Default()
+	tickerAPI.Routes(router)
+
 	slog.Info("nOracle started")
+	go func() {
+		if err := router.Run(":8080"); err != nil {
+			slog.Error("Failed to start router", "error", err)
+			os.Exit(1)
+		}
+	}()
+
 	<-ctx.Done()
-	close(exit)
 }
