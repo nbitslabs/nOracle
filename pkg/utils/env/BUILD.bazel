@@ -1,8 +1,15 @@
-load("@rules_go//go:def.bzl", "go_library")
+load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "env",
     srcs = ["var.go"],
     importpath = "github.com/nbitslabs/nOracle/pkg/utils/env",
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "env_test",
+    srcs = ["var_test.go"],
+    embed = [":env"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )
