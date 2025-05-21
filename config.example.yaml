@@ -4,3 +4,8 @@ exchanges:
     symbols:
       - BTCUSDT
       - ETHUSDT
+  - name: okx
+    url: wss://ws.okx.com:8443
+    symbols:
+      - BTC-USDT
+      - ETH-USDT

@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "okx",
+    srcs = [
+        "connector.go",
+        "types.go",
+    ],
+    importpath = "github.com/nbitslabs/nOracle/pkg/connector/okx",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/connector",
+        "//pkg/utils/ticker",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)

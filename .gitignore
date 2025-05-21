@@ -29,3 +29,6 @@ config.yaml
 
 # Bazel files
 bazel-*
+
+# MacOS files
+.DS_Store

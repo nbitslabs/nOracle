@@ -1,0 +1,15 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "ticker",
+    srcs = ["okx.go"],
+    importpath = "github.com/nbitslabs/nOracle/pkg/utils/ticker",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "ticker_test",
+    srcs = ["okx_test.go"],
+    embed = [":ticker"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

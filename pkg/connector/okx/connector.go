@@ -1,14 +1,15 @@
-package binance
+package okx
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
+	"github.com/nbitslabs/nOracle/pkg/utils/ticker"
 )
 
 func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
@@ -19,16 +20,22 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, fmt.Errorf("pairs are required")
 	}
 
-	channels := []string{}
-	for _, pair := range pairs {
-		channels = append(channels, fmt.Sprintf("%s@ticker", strings.ToLower(pair)))
-	}
-
-	wsUrlWithChannels := fmt.Sprintf("%s/stream?streams=%s", wsUrl, strings.Join(channels, "/"))
+	wsUrlWithChannels := fmt.Sprintf("%s/ws/v5/public", wsUrl)
 
 	ws, _, err := websocket.DefaultDialer.Dial(wsUrlWithChannels, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, pair := range pairs {
+		req := SubscriptionMessage{
+			Op:   "subscribe",
+			Args: []ChannelArgs{{Channel: "tickers", InstId: pair}},
+		}
+
+		if err := ws.WriteJSON(req); err != nil {
+			return nil, err
+		}
 	}
 
 	return &Connector{
@@ -62,18 +69,30 @@ func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.Tick
 					continue
 				}
 
-				var t Ticker
-				if err := json.Unmarshal(message, &t); err != nil {
+				var tickerResponse TickerResponse
+				if err := json.Unmarshal(message, &tickerResponse); err != nil {
 					slog.Warn("error unmarshalling message", "error", err, "exchange", Name)
+					continue
+				}
+
+				if len(tickerResponse.Data) != 1 {
+					continue
+				}
+
+				data := tickerResponse.Data[0]
+
+				ts, err := strconv.ParseInt(data.Ts, 10, 64)
+				if err != nil {
+					slog.Warn("error parsing timestamp", "error", err, "exchange", Name)
 					continue
 				}
 
 				out <- connector.TickerUpdate{
 					Exchange:  Name,
-					Symbol:    t.Stream.Symbol,
-					Price:     t.Stream.LastPrice,
-					Volume:    t.Stream.Volume,
-					Timestamp: t.Stream.EventTime,
+					Symbol:    ticker.OKXToStandardTicker(data.InstID),
+					Price:     data.Last,
+					Volume:    data.LastSz,
+					Timestamp: ts,
 				}
 			}
 		}
