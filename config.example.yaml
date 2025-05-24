@@ -14,3 +14,8 @@ exchanges:
     symbols:
       - BTCUSDT
       - ETHUSDT
+  - name: coinbase
+    url: wss://ws-feed.exchange.coinbase.com
+    symbols:
+      - BTC-USDT
+      - ETH-USDT

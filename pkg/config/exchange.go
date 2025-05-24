@@ -7,6 +7,7 @@ import (
 	"github.com/nbitslabs/nOracle/pkg/connector"
 	"github.com/nbitslabs/nOracle/pkg/connector/binance"
 	"github.com/nbitslabs/nOracle/pkg/connector/bybit"
+	"github.com/nbitslabs/nOracle/pkg/connector/coinbase"
 	"github.com/nbitslabs/nOracle/pkg/connector/okx"
 )
 
@@ -18,6 +19,8 @@ func LoadConnector(ctx context.Context, exchange string, url string, symbols []s
 		return okx.NewConnector(ctx, url, symbols)
 	case "bybit":
 		return bybit.NewConnector(ctx, url, symbols)
+	case "coinbase":
+		return coinbase.NewConnector(ctx, url, symbols)
 	default:
 		return nil, fmt.Errorf("unknown exchange: %s", exchange)
 	}

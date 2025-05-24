@@ -1,18 +1,17 @@
-package bybit
+package coinbase
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strings"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
+	"github.com/nbitslabs/nOracle/pkg/utils/ticker"
 )
 
-const Name = "bybit"
+const Name = "coinbase"
 
 type Connector struct {
 	ctx   context.Context
@@ -28,22 +27,14 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, fmt.Errorf("pairs are required")
 	}
 
-	wsUrlWithChannels := fmt.Sprintf("%s/v5/public/spot", wsUrl)
+	req := SubscriptionMessage{
+		Type:     "subscribe",
+		Channels: []Channel{{Name: "ticker", ProductIds: pairs}},
+	}
 
-	ws, _, err := websocket.DefaultDialer.Dial(wsUrlWithChannels, nil)
+	ws, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
 	if err != nil {
 		return nil, err
-	}
-
-	args := make([]string, 0, len(pairs))
-	for _, pair := range pairs {
-		args = append(args, fmt.Sprintf("tickers.%s", strings.ToUpper(pair)))
-	}
-
-	req := SubscriptionMessage{
-		Op:    "subscribe",
-		ReqId: uuid.New(),
-		Args:  args,
 	}
 
 	if err := ws.WriteJSON(req); err != nil {
@@ -64,7 +55,6 @@ func (c *Connector) Close() error {
 	if c.ws != nil {
 		return c.ws.Close()
 	}
-
 	return nil
 }
 
@@ -89,10 +79,10 @@ func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.Tick
 
 				out <- connector.TickerUpdate{
 					Exchange:  Name,
-					Symbol:    tickerResponse.Data.Symbol,
-					Price:     tickerResponse.Data.LastPrice,
-					Volume:    tickerResponse.Data.Volume24H,
-					Timestamp: tickerResponse.Ts,
+					Symbol:    ticker.CoinbaseToStandardTicker(tickerResponse.ProductID),
+					Price:     tickerResponse.Price,
+					Volume:    tickerResponse.Volume24H,
+					Timestamp: tickerResponse.Time.Unix(),
 				}
 			}
 		}

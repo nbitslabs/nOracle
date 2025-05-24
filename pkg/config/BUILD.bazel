@@ -12,6 +12,7 @@ go_library(
         "//pkg/connector",
         "//pkg/connector/binance",
         "//pkg/connector/bybit",
+        "//pkg/connector/coinbase",
         "//pkg/connector/okx",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
