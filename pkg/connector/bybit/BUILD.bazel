@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bybit",
+    srcs = [
+        "connector.go",
+        "types.go",
+    ],
+    importpath = "github.com/nbitslabs/nOracle/pkg/connector/bybit",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/connector",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_gorilla_websocket//:websocket",
+    ],
+)

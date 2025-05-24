@@ -9,3 +9,8 @@ exchanges:
     symbols:
       - BTC-USDT
       - ETH-USDT
+  - name: bybit
+    url: wss://stream.bybit.com
+    symbols:
+      - BTCUSDT
+      - ETHUSDT
