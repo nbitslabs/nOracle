@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 	"github.com/nbitslabs/nOracle/pkg/utils/ticker"
+	"github.com/recws-org/recws"
 )
 
 const Name = "coinbase"
@@ -16,7 +17,7 @@ const Name = "coinbase"
 type Connector struct {
 	ctx   context.Context
 	pairs []string
-	ws    *websocket.Conn
+	ws    *recws.RecConn
 }
 
 func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
@@ -32,10 +33,10 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		Channels: []Channel{{Name: "ticker", ProductIds: pairs}},
 	}
 
-	ws, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
-	if err != nil {
-		return nil, err
+	ws := &recws.RecConn{
+		KeepAliveTimeout: 10 * time.Second,
 	}
+	ws.Dial(wsUrl, nil)
 
 	if err := ws.WriteJSON(req); err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (c *Connector) Close() error {
 		c.ctx.Done()
 	}
 	if c.ws != nil {
-		return c.ws.Close()
+		c.ws.Close()
 	}
 	return nil
 }

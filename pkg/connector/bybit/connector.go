@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
+	"github.com/recws-org/recws"
 )
 
 const Name = "bybit"
@@ -18,7 +18,7 @@ const Name = "bybit"
 type Connector struct {
 	ctx   context.Context
 	pairs []string
-	ws    *websocket.Conn
+	ws    *recws.RecConn
 }
 
 func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
@@ -31,10 +31,10 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 
 	wsUrlWithChannels := fmt.Sprintf("%s/v5/public/spot", wsUrl)
 
-	ws, _, err := websocket.DefaultDialer.Dial(wsUrlWithChannels, nil)
-	if err != nil {
-		return nil, err
+	ws := &recws.RecConn{
+		KeepAliveTimeout: 10 * time.Second,
 	}
+	ws.Dial(wsUrlWithChannels, nil)
 
 	args := make([]string, 0, len(pairs))
 	for _, pair := range pairs {
@@ -51,15 +51,11 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, err
 	}
 
-	connector := &Connector{
+	return &Connector{
 		ctx:   ctx,
 		pairs: pairs,
 		ws:    ws,
-	}
-
-	// We send heart beat every 10 seconds
-	connector.sendHeartbeat()
-	return connector, nil
+	}, nil
 }
 
 func (c *Connector) Close() error {
@@ -67,7 +63,7 @@ func (c *Connector) Close() error {
 		c.ctx.Done()
 	}
 	if c.ws != nil {
-		return c.ws.Close()
+		c.ws.Close()
 	}
 
 	return nil
@@ -111,21 +107,4 @@ func (c *Connector) Name() string {
 
 func (c *Connector) Tickers() []string {
 	return c.pairs
-}
-
-func (c *Connector) sendHeartbeat() {
-	req := SubscriptionMessage{
-		Op:    "ping",
-		ReqId: "100001",
-	}
-
-	// We send heart beat every 10 seconds
-	go func() {
-		for {
-			time.Sleep(10 * time.Second)
-			if err := c.ws.WriteJSON(req); err != nil {
-				slog.Warn("error sending heartbeat", "error", err, "exchange", Name)
-			}
-		}
-	}()
 }

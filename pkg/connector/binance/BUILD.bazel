@@ -10,6 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/connector",
-        "@com_github_gorilla_websocket//:websocket",
+        "@com_github_recws_org_recws//:recws",
     ],
 )

@@ -4,14 +4,14 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/gorilla/websocket"
+	"github.com/recws-org/recws"
 )
 
 type Connector struct {
 	ctx   context.Context
 	pairs []string
 
-	ws *websocket.Conn
+	ws *recws.RecConn
 }
 
 const Name = "binance"

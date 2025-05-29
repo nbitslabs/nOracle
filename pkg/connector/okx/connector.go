@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 	"github.com/nbitslabs/nOracle/pkg/utils/ticker"
+	"github.com/recws-org/recws"
 )
 
 func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
@@ -21,11 +22,10 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 	}
 
 	wsUrlWithChannels := fmt.Sprintf("%s/ws/v5/public", wsUrl)
-
-	ws, _, err := websocket.DefaultDialer.Dial(wsUrlWithChannels, nil)
-	if err != nil {
-		return nil, err
+	ws := &recws.RecConn{
+		KeepAliveTimeout: 10 * time.Second,
 	}
+	ws.Dial(wsUrlWithChannels, nil)
 
 	for _, pair := range pairs {
 		req := SubscriptionMessage{
@@ -50,7 +50,7 @@ func (c *Connector) Close() error {
 		c.ctx.Done()
 	}
 	if c.ws != nil {
-		return c.ws.Close()
+		c.ws.Close()
 	}
 
 	return nil
