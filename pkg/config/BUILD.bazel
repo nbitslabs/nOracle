@@ -14,6 +14,7 @@ go_library(
         "//pkg/connector/bybit",
         "//pkg/connector/coinbase",
         "//pkg/connector/okx",
+        "//pkg/connector/upbit",
         "@in_gopkg_yaml_v3//:yaml_v3",
     ],
 )

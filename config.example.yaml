@@ -19,3 +19,8 @@ exchanges:
     symbols:
       - BTC-USDT
       - ETH-USDT
+  - name: upbit
+    url: wss://api.upbit.com/websocket/v1
+    symbols:
+      - USDT-BTC
+      - USDT-ETH

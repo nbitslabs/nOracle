@@ -6,6 +6,7 @@ go_library(
         "coinbase.go",
         "okx.go",
         "shared.go",
+        "upbit.go",
     ],
     importpath = "github.com/nbitslabs/nOracle/pkg/utils/ticker",
     visibility = ["//visibility:public"],
@@ -16,6 +17,7 @@ go_test(
     srcs = [
         "coinbase_test.go",
         "okx_test.go",
+        "upbit_test.go",
     ],
     embed = [":ticker"],
     deps = ["@com_github_stretchr_testify//assert"],
