@@ -2,14 +2,12 @@ package bybit
 
 import (
 	"math/big"
-
-	"github.com/google/uuid"
 )
 
 type SubscriptionMessage struct {
-	ReqId uuid.UUID `json:"req_id"`
-	Op    string    `json:"op"`
-	Args  []string  `json:"args"`
+	ReqId string   `json:"req_id"`
+	Op    string   `json:"op"`
+	Args  []string `json:"args"`
 }
 
 type TickerResponse struct {

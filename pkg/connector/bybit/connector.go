@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -42,7 +43,7 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 
 	req := SubscriptionMessage{
 		Op:    "subscribe",
-		ReqId: uuid.New(),
+		ReqId: uuid.New().String(),
 		Args:  args,
 	}
 
@@ -50,11 +51,15 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, err
 	}
 
-	return &Connector{
+	connector := &Connector{
 		ctx:   ctx,
 		pairs: pairs,
 		ws:    ws,
-	}, nil
+	}
+
+	// We send heart beat every 10 seconds
+	connector.sendHeartbeat()
+	return connector, nil
 }
 
 func (c *Connector) Close() error {
@@ -106,4 +111,21 @@ func (c *Connector) Name() string {
 
 func (c *Connector) Tickers() []string {
 	return c.pairs
+}
+
+func (c *Connector) sendHeartbeat() {
+	req := SubscriptionMessage{
+		Op:    "ping",
+		ReqId: "100001",
+	}
+
+	// We send heart beat every 10 seconds
+	go func() {
+		for {
+			time.Sleep(10 * time.Second)
+			if err := c.ws.WriteJSON(req); err != nil {
+				slog.Warn("error sending heartbeat", "error", err, "exchange", Name)
+			}
+		}
+	}()
 }
