@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math/big"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -66,6 +67,8 @@ func (a *API) GetPrice(c *gin.Context) {
 	switch method {
 	case "average":
 		price, err = a.averagePrice(symbol, exchanges)
+	case "median":
+		price, err = a.medianPrice(symbol, exchanges)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
 		return
@@ -108,4 +111,27 @@ func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error
 	average := total.Quo(total, big.NewFloat(float64(count)))
 
 	return average, nil
+}
+
+func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error) {
+	prices := []*big.Float{}
+	for _, exchange := range exchanges {
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		if err != nil {
+			return nil, fmt.Errorf("ticker not found: %w", err)
+		}
+		prices = append(prices, ticker.Price)
+	}
+
+	sort.Slice(prices, func(i, j int) bool {
+		return prices[i].Cmp(prices[j]) < 0
+	})
+
+	mid := len(prices) / 2
+	if len(prices)%2 == 1 {
+		return prices[mid], nil
+	} else {
+		sum := new(big.Float).Add(prices[mid-1], prices[mid])
+		return new(big.Float).Quo(sum, big.NewFloat(2)), nil
+	}
 }
