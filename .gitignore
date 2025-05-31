@@ -32,3 +32,6 @@ bazel-*
 
 # MacOS files
 .DS_Store
+
+# .vscode
+.vscode

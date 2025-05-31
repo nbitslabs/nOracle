@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/big"
 	"net/http"
 	"strings"
 
@@ -33,6 +34,7 @@ func NewAPI(ctx context.Context, store storage.Operations[connector.TickerUpdate
 
 func (a *API) Routes(r *gin.Engine) {
 	r.GET("/ticker/:exchange/:symbol", a.GetTicker)
+	r.GET("/price/:method/:symbol", a.GetPrice)
 }
 
 func (a *API) GetTicker(c *gin.Context) {
@@ -49,6 +51,33 @@ func (a *API) GetTicker(c *gin.Context) {
 	c.JSON(http.StatusOK, ticker)
 }
 
+func (a *API) GetPrice(c *gin.Context) {
+	method := c.Param("method")
+	symbol := c.Param("symbol")
+	exchanges := c.QueryArray("exchange")
+
+	if len(exchanges) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No exchanges provided"})
+		return
+	}
+
+	var price *big.Float
+	var err error
+	switch method {
+	case "average":
+		price, err = a.averagePrice(symbol, exchanges)
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"price": price, "method": method, "symbol": symbol, "exchanges": exchanges})
+}
+
 func (a *API) manageStore() {
 	for {
 		select {
@@ -62,4 +91,21 @@ func (a *API) manageStore() {
 			return
 		}
 	}
+}
+
+func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error) {
+	total := big.NewFloat(0)
+	count := 0
+	for _, exchange := range exchanges {
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		if err != nil {
+			return nil, fmt.Errorf("ticker not found: %w", err)
+		}
+		total.Add(total, ticker.Price)
+		count++
+	}
+
+	average := total.Quo(total, big.NewFloat(float64(count)))
+
+	return average, nil
 }
