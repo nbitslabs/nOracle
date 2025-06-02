@@ -132,3 +132,53 @@ func TestMedianPrice(t *testing.T) {
 		assert.Nil(t, price)
 	})
 }
+
+func TestMinPrice(t *testing.T) {
+	t.Run("BTCUSDT min price", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+			Price: big.NewFloat(10000),
+		})
+		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+			Price: big.NewFloat(10010),
+		})
+
+		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
+		assert.NoError(t, err)
+		assert.Equal(t, big.NewFloat(10000), price)
+	})
+
+	t.Run("Exchange not found", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+			Price: big.NewFloat(10000),
+		})
+
+		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
+		assert.Error(t, err)
+		assert.Nil(t, price)
+	})
+
+	t.Run("Symbol not found", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+			Price: big.NewFloat(10000),
+		})
+
+		price, err := api.minPrice("ETHUSDT", []string{"binance"})
+		assert.Error(t, err)
+		assert.Nil(t, price)
+	})
+}

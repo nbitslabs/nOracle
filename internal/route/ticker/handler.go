@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/big"
 	"net/http"
 	"sort"
@@ -69,6 +70,8 @@ func (a *API) GetPrice(c *gin.Context) {
 		price, err = a.averagePrice(symbol, exchanges)
 	case "median":
 		price, err = a.medianPrice(symbol, exchanges)
+	case "min":
+		price, err = a.minPrice(symbol, exchanges)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
 		return
@@ -134,4 +137,19 @@ func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error)
 		sum := new(big.Float).Add(prices[mid-1], prices[mid])
 		return new(big.Float).Quo(sum, big.NewFloat(2)), nil
 	}
+}
+
+func (a *API) minPrice(symbol string, exchanges []string) (*big.Float, error) {
+	min := big.NewFloat(math.MaxFloat64)
+	for _, exchange := range exchanges {
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		if err != nil {
+			return nil, fmt.Errorf("ticker not found: %w", err)
+		}
+		if ticker.Price.Cmp(min) < 0 {
+			min = ticker.Price
+		}
+	}
+
+	return min, nil
 }
