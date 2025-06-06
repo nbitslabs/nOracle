@@ -26,17 +26,16 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 	ws := &recws.RecConn{
 		KeepAliveTimeout: 10 * time.Second,
 	}
+	ws.SubscribeHandler = func() error {
+		req := []map[string]interface{}{
+			{"ticket": uuid.NewString()},
+			{"type": "ticker", "codes": pairs, "isOnlyRealtime": true},
+			{"format": "DEFAULT"},
+		}
+
+		return ws.WriteJSON(req)
+	}
 	ws.Dial(wsUrlWithChannels, nil)
-
-	req := []map[string]interface{}{
-		{"ticket": uuid.NewString()},
-		{"type": "ticker", "codes": pairs, "isOnlyRealtime": true},
-		{"format": "DEFAULT"},
-	}
-
-	if err := ws.WriteJSON(req); err != nil {
-		return nil, err
-	}
 
 	return &Connector{
 		ctx:   ctx,

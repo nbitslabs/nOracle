@@ -28,19 +28,18 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, fmt.Errorf("pairs are required")
 	}
 
-	req := SubscriptionMessage{
-		Type:     "subscribe",
-		Channels: []Channel{{Name: "ticker", ProductIds: pairs}},
-	}
-
 	ws := &recws.RecConn{
 		KeepAliveTimeout: 10 * time.Second,
 	}
-	ws.Dial(wsUrl, nil)
+	ws.SubscribeHandler = func() error {
+		req := SubscriptionMessage{
+			Type:     "subscribe",
+			Channels: []Channel{{Name: "ticker", ProductIds: pairs}},
+		}
 
-	if err := ws.WriteJSON(req); err != nil {
-		return nil, err
+		return ws.WriteJSON(req)
 	}
+	ws.Dial(wsUrl, nil)
 
 	return &Connector{
 		ctx:   ctx,

@@ -34,22 +34,20 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 	ws := &recws.RecConn{
 		KeepAliveTimeout: 10 * time.Second,
 	}
+	ws.SubscribeHandler = func() error {
+		args := make([]string, 0, len(pairs))
+		for _, pair := range pairs {
+			args = append(args, fmt.Sprintf("tickers.%s", strings.ToUpper(pair)))
+		}
+
+		req := SubscriptionMessage{
+			Op:    "subscribe",
+			ReqId: uuid.New().String(),
+			Args:  args,
+		}
+		return ws.WriteJSON(req)
+	}
 	ws.Dial(wsUrlWithChannels, nil)
-
-	args := make([]string, 0, len(pairs))
-	for _, pair := range pairs {
-		args = append(args, fmt.Sprintf("tickers.%s", strings.ToUpper(pair)))
-	}
-
-	req := SubscriptionMessage{
-		Op:    "subscribe",
-		ReqId: uuid.New().String(),
-		Args:  args,
-	}
-
-	if err := ws.WriteJSON(req); err != nil {
-		return nil, err
-	}
 
 	return &Connector{
 		ctx:   ctx,
