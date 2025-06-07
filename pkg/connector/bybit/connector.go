@@ -48,6 +48,7 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return ws.WriteJSON(req)
 	}
 	ws.Dial(wsUrlWithChannels, nil)
+	go sendPing(ctx, ws)
 
 	return &Connector{
 		ctx:   ctx,
@@ -105,4 +106,27 @@ func (c *Connector) Name() string {
 
 func (c *Connector) Tickers() []string {
 	return c.pairs
+}
+
+// https://bybit-exchange.github.io/docs/v5/ws/connect#how-to-send-the-heartbeat-packet
+func sendPing(ctx context.Context, ws *recws.RecConn) {
+	ticker := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			if !ws.IsConnected() {
+				continue
+			}
+
+			if err := ws.WriteJSON(map[string]string{
+				"req_id": uuid.New().String(),
+				"op":     "ping",
+			}); err != nil {
+				slog.Warn("error sending ping", "error", err, "exchange", Name)
+			}
+		}
+	}
 }
