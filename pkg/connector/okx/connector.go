@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 	"github.com/nbitslabs/nOracle/pkg/utils/ticker"
 	"github.com/recws-org/recws"
@@ -39,6 +40,7 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil
 	}
 	ws.Dial(wsUrlWithChannels, nil)
+	go sendPing(ctx, ws)
 
 	return &Connector{
 		ctx:   ctx,
@@ -109,4 +111,24 @@ func (c *Connector) Name() string {
 
 func (c *Connector) Tickers() []string {
 	return c.pairs
+}
+
+// https://www.okx.com/docs-v5/en/#overview-websocket
+func sendPing(ctx context.Context, ws *recws.RecConn) {
+	ticker := time.NewTicker(15 * time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			if !ws.IsConnected() {
+				continue
+			}
+
+			if err := ws.WriteMessage(websocket.PingMessage, []byte("ping")); err != nil {
+				slog.Warn("error sending ping", "error", err, "exchange", Name)
+			}
+		}
+	}
 }

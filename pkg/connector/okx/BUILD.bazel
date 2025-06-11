@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//pkg/connector",
         "//pkg/utils/ticker",
+        "@com_github_gorilla_websocket//:websocket",
         "@com_github_recws_org_recws//:recws",
     ],
 )
