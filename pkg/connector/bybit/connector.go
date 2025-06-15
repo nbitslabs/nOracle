@@ -100,10 +100,12 @@ func (c *Connector) streamSpot(ctx context.Context, ws *bybit.WebSocketClient, o
 		}
 
 		out <- connector.TickerUpdate{
-			Exchange:  Name,
-			Symbol:    string(data.Symbol),
-			Price:     price,
-			Volume:    volume,
+			Exchange: Name,
+			Symbol:   string(data.Symbol),
+			Spot: &connector.SpotPriceUpdate{
+				Price:  price,
+				Volume: volume,
+			},
 			Timestamp: res.TimeStamp,
 		}
 		return nil

@@ -81,10 +81,12 @@ S:
 			}
 
 			out <- connector.TickerUpdate{
-				Exchange:  Name,
-				Symbol:    event.Symbol,
-				Price:     price,
-				Volume:    volume,
+				Exchange: Name,
+				Symbol:   event.Symbol,
+				Spot: &connector.SpotPriceUpdate{
+					Price:  price,
+					Volume: volume,
+				},
 				Timestamp: event.Time,
 			}
 		}

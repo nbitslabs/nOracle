@@ -13,13 +13,17 @@ type ExchangeConnector interface {
 }
 
 type TickerUpdate struct {
-	Exchange  string     `json:"exchange"`
-	Symbol    string     `json:"symbol"`
-	Price     *big.Float `json:"price"`
-	Volume    *big.Float `json:"volume"`
-	Timestamp int64      `json:"timestamp"`
+	Exchange  string `json:"exchange"`
+	Symbol    string `json:"symbol"`
+	Timestamp int64  `json:"timestamp"`
 
-	Futures *FuturesPriceUpdate `json:"futures"`
+	Spot    *SpotPriceUpdate    `json:"spot,omitempty"`
+	Futures *FuturesPriceUpdate `json:"futures,omitempty"`
+}
+
+type SpotPriceUpdate struct {
+	Price  *big.Float `json:"price"`
+	Volume *big.Float `json:"volume"`
 }
 
 type FuturesPriceUpdate struct {

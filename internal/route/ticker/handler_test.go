@@ -17,10 +17,14 @@ func TestAveragePrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10010),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10010),
+			},
 		})
 
 		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx"})
@@ -35,10 +39,12 @@ func TestAveragePrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
-		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx", "bybit"})
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -50,10 +56,14 @@ func TestAveragePrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
 		price, err := api.averagePrice("ETHUSDT", []string{"binance", "okx"})
@@ -70,13 +80,19 @@ func TestMedianPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10010),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10010),
+			},
 		})
 		api.store.Store("bybit:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10020),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10020),
+			},
 		})
 
 		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx", "bybit"})
@@ -91,10 +107,14 @@ func TestMedianPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10010),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10010),
+			},
 		})
 
 		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"})
@@ -109,7 +129,9 @@ func TestMedianPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
 		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"})
@@ -124,7 +146,9 @@ func TestMedianPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
 		price, err := api.medianPrice("ETHUSDT", []string{"binance"})
@@ -141,10 +165,14 @@ func TestMinPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10010),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10010),
+			},
 		})
 
 		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
@@ -159,7 +187,9 @@ func TestMinPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
 		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
@@ -174,7 +204,9 @@ func TestMinPrice(t *testing.T) {
 		}
 
 		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
-			Price: big.NewFloat(10000),
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
 		})
 
 		price, err := api.minPrice("ETHUSDT", []string{"binance"})

@@ -107,7 +107,7 @@ func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		total.Add(total, ticker.Price)
+		total.Add(total, ticker.Spot.Price)
 		count++
 	}
 
@@ -123,7 +123,7 @@ func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error)
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		prices = append(prices, ticker.Price)
+		prices = append(prices, ticker.Spot.Price)
 	}
 
 	sort.Slice(prices, func(i, j int) bool {
@@ -146,8 +146,8 @@ func (a *API) minPrice(symbol string, exchanges []string) (*big.Float, error) {
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		if ticker.Price.Cmp(min) < 0 {
-			min = ticker.Price
+		if ticker.Spot.Price.Cmp(min) < 0 {
+			min = ticker.Spot.Price
 		}
 	}
 
