@@ -10,6 +10,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/connector",
+        "@com_github_adshao_go_binance_v2//:go-binance",
+        "@com_github_adshao_go_binance_v2//futures",
         "@com_github_recws_org_recws//:recws",
     ],
 )

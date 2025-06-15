@@ -18,4 +18,12 @@ type TickerUpdate struct {
 	Price     *big.Float `json:"price"`
 	Volume    *big.Float `json:"volume"`
 	Timestamp int64      `json:"timestamp"`
+
+	Futures *FuturesPriceUpdate `json:"futures"`
+}
+
+type FuturesPriceUpdate struct {
+	MarkPrice   *big.Float `json:"markPrice"`
+	IndexPrice  *big.Float `json:"indexPrice"`
+	FundingRate *big.Float `json:"fundingRate"`
 }
