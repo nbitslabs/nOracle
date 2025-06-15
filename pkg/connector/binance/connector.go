@@ -29,9 +29,6 @@ func (c *Connector) Close() error {
 	if c.ctx != nil {
 		c.ctx.Done()
 	}
-	if c.ws != nil {
-		c.ws.Close()
-	}
 
 	return nil
 }

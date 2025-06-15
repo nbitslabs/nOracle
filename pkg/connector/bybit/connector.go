@@ -2,15 +2,11 @@ package bybit
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log/slog"
-	"strings"
-	"time"
+	"math/big"
 
-	"github.com/google/uuid"
+	"github.com/hirokisan/bybit/v2"
 	"github.com/nbitslabs/nOracle/pkg/connector"
-	"github.com/recws-org/recws"
 )
 
 const Name = "bybit"
@@ -18,7 +14,8 @@ const Name = "bybit"
 type Connector struct {
 	ctx   context.Context
 	pairs []string
-	ws    *recws.RecConn
+
+	tickers []bybit.V5WebsocketPublicTickerParamKey
 }
 
 func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
@@ -29,31 +26,17 @@ func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.
 		return nil, fmt.Errorf("pairs are required")
 	}
 
-	wsUrlWithChannels := fmt.Sprintf("%s/v5/public/spot", wsUrl)
-
-	ws := &recws.RecConn{
-		KeepAliveTimeout: 10 * time.Second,
+	tickers := make([]bybit.V5WebsocketPublicTickerParamKey, 0, len(pairs))
+	for _, pair := range pairs {
+		tickers = append(tickers, bybit.V5WebsocketPublicTickerParamKey{
+			Symbol: bybit.SymbolV5(pair),
+		})
 	}
-	ws.SubscribeHandler = func() error {
-		args := make([]string, 0, len(pairs))
-		for _, pair := range pairs {
-			args = append(args, fmt.Sprintf("tickers.%s", strings.ToUpper(pair)))
-		}
-
-		req := SubscriptionMessage{
-			Op:    "subscribe",
-			ReqId: uuid.New().String(),
-			Args:  args,
-		}
-		return ws.WriteJSON(req)
-	}
-	ws.Dial(wsUrlWithChannels, nil)
-	go sendPing(ctx, ws)
 
 	return &Connector{
-		ctx:   ctx,
-		pairs: pairs,
-		ws:    ws,
+		ctx:     ctx,
+		pairs:   pairs,
+		tickers: tickers,
 	}, nil
 }
 
@@ -61,42 +44,29 @@ func (c *Connector) Close() error {
 	if c.ctx != nil {
 		c.ctx.Done()
 	}
-	if c.ws != nil {
-		c.ws.Close()
-	}
 
 	return nil
 }
 
 func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.TickerUpdate) error {
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				_, message, err := c.ws.ReadMessage()
-				if err != nil {
-					slog.Warn("error reading message", "error", err, "exchange", Name)
-					continue
-				}
+	ws := bybit.NewWebsocketClient()
 
-				var tickerResponse TickerResponse
-				if err := json.Unmarshal(message, &tickerResponse); err != nil {
-					slog.Warn("error unmarshalling message", "error", err, "exchange", Name)
-					continue
-				}
+	spot, err := c.streamSpot(ctx, ws, out)
+	if err != nil {
+		return err
+	}
 
-				out <- connector.TickerUpdate{
-					Exchange:  Name,
-					Symbol:    tickerResponse.Data.Symbol,
-					Price:     tickerResponse.Data.LastPrice,
-					Volume:    tickerResponse.Data.Volume24H,
-					Timestamp: tickerResponse.Ts,
-				}
-			}
-		}
-	}()
+	futures, err := c.streamFutures(ctx, ws, out)
+	if err != nil {
+		return err
+	}
+
+	executors := []bybit.WebsocketExecutor{
+		spot,
+		futures,
+	}
+
+	ws.Start(ctx, executors)
 	return nil
 }
 
@@ -108,25 +78,82 @@ func (c *Connector) Tickers() []string {
 	return c.pairs
 }
 
-// https://bybit-exchange.github.io/docs/v5/ws/connect#how-to-send-the-heartbeat-packet
-func sendPing(ctx context.Context, ws *recws.RecConn) {
-	ticker := time.NewTicker(10 * time.Second)
-	for {
-		select {
-		case <-ctx.Done():
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			if !ws.IsConnected() {
-				continue
-			}
-
-			if err := ws.WriteJSON(map[string]string{
-				"req_id": uuid.New().String(),
-				"op":     "ping",
-			}); err != nil {
-				slog.Warn("error sending ping", "error", err, "exchange", Name)
-			}
-		}
+func (c *Connector) streamSpot(ctx context.Context, ws *bybit.WebSocketClient, out chan<- connector.TickerUpdate) (bybit.V5WebsocketPublicServiceI, error) {
+	svc, err := ws.V5().Public(bybit.CategoryV5Spot)
+	if err != nil {
+		return nil, err
 	}
+
+	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
+		data := res.Data.Spot
+		if data.Symbol == "" {
+			return fmt.Errorf("received empty ticker data")
+		}
+
+		price, ok := big.NewFloat(0).SetString(data.LastPrice)
+		if !ok {
+			return fmt.Errorf("error parsing price")
+		}
+		volume, ok := big.NewFloat(0).SetString(data.Volume24H)
+		if !ok {
+			return fmt.Errorf("error parsing volume")
+		}
+
+		out <- connector.TickerUpdate{
+			Exchange:  Name,
+			Symbol:    string(data.Symbol),
+			Price:     price,
+			Volume:    volume,
+			Timestamp: res.TimeStamp,
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return svc, nil
+}
+
+func (c *Connector) streamFutures(ctx context.Context, ws *bybit.WebSocketClient, out chan<- connector.TickerUpdate) (bybit.V5WebsocketPublicServiceI, error) {
+	svc, err := ws.V5().Public(bybit.CategoryV5Linear)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
+		data := res.Data.LinearInverse
+		if data.Symbol == "" {
+			return fmt.Errorf("received empty ticker data")
+		}
+
+		mp, ok := big.NewFloat(0).SetString(data.MarkPrice)
+		if !ok {
+			return fmt.Errorf("error parsing price")
+		}
+
+		ip, ok := big.NewFloat(0).SetString(data.IndexPrice)
+		if !ok {
+			return fmt.Errorf("error parsing index price")
+		}
+
+		fr, ok := big.NewFloat(0).SetString(data.FundingRate)
+		if !ok {
+			return fmt.Errorf("error parsing funding rate")
+		}
+
+		out <- connector.TickerUpdate{
+			Exchange: Name,
+			Symbol:   string(data.Symbol),
+			Futures: &connector.FuturesPriceUpdate{
+				MarkPrice:   mp,
+				IndexPrice:  ip,
+				FundingRate: fr,
+			},
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return svc, nil
 }

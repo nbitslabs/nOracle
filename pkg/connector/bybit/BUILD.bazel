@@ -10,7 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/connector",
-        "@com_github_google_uuid//:uuid",
-        "@com_github_recws_org_recws//:recws",
+        "@com_github_hirokisan_bybit_v2//:bybit",
     ],
 )

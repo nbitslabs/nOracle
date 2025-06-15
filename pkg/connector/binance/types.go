@@ -3,15 +3,11 @@ package binance
 import (
 	"context"
 	"math/big"
-
-	"github.com/recws-org/recws"
 )
 
 type Connector struct {
 	ctx   context.Context
 	pairs []string
-
-	ws *recws.RecConn
 }
 
 const Name = "binance"
