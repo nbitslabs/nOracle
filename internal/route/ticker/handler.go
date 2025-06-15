@@ -35,15 +35,16 @@ func NewAPI(ctx context.Context, store storage.Operations[connector.TickerUpdate
 }
 
 func (a *API) Routes(r *gin.Engine) {
-	r.GET("/ticker/:exchange/:symbol", a.GetTicker)
+	r.GET("/ticker/:trading/:exchange/:symbol", a.GetTicker)
 	r.GET("/price/:method/:symbol", a.GetPrice)
 }
 
 func (a *API) GetTicker(c *gin.Context) {
 	exchange := c.Param("exchange")
 	symbol := c.Param("symbol")
+	trading := c.Param("trading")
 
-	key := strings.ToLower(fmt.Sprintf("%s:%s", exchange, symbol))
+	key := strings.ToLower(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
 	ticker, err := a.store.Get(key)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -88,9 +89,19 @@ func (a *API) manageStore() {
 	for {
 		select {
 		case ticker := <-a.out:
-			key := strings.ToLower(fmt.Sprintf("%s:%s", ticker.Exchange, ticker.Symbol))
-			if err := a.store.Store(key, ticker); err != nil {
-				slog.Error("Failed to store ticker", "error", err)
+			switch {
+			case ticker.Spot != nil:
+				key := strings.ToLower(fmt.Sprintf("%s:%s:spot", ticker.Exchange, ticker.Symbol))
+				if err := a.store.Store(key, ticker); err != nil {
+					slog.Error("Failed to store ticker", "error", err)
+				}
+			case ticker.Futures != nil:
+				key := strings.ToLower(fmt.Sprintf("%s:%s:futures", ticker.Exchange, ticker.Symbol))
+				if err := a.store.Store(key, ticker); err != nil {
+					slog.Error("Failed to store ticker", "error", err)
+				}
+			default:
+				slog.Error("Received unknown ticker", "ticker", ticker)
 			}
 		case <-a.ctx.Done():
 			slog.Info("Stopping ticker store manager")
@@ -103,7 +114,7 @@ func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error
 	total := big.NewFloat(0)
 	count := 0
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
@@ -119,7 +130,7 @@ func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error
 func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error) {
 	prices := []*big.Float{}
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
@@ -142,7 +153,7 @@ func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error)
 func (a *API) minPrice(symbol string, exchanges []string) (*big.Float, error) {
 	min := big.NewFloat(math.MaxFloat64)
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}

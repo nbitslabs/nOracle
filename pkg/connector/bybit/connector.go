@@ -144,8 +144,9 @@ func (c *Connector) streamFutures(ctx context.Context, ws *bybit.WebSocketClient
 		}
 
 		out <- connector.TickerUpdate{
-			Exchange: Name,
-			Symbol:   string(data.Symbol),
+			Exchange:  Name,
+			Symbol:    string(data.Symbol),
+			Timestamp: res.TimeStamp,
 			Futures: &connector.FuturesPriceUpdate{
 				MarkPrice:   mp,
 				IndexPrice:  ip,

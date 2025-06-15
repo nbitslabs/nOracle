@@ -16,12 +16,12 @@ func TestAveragePrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
 		})
-		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10010),
 			},
@@ -38,7 +38,7 @@ func TestAveragePrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
@@ -55,12 +55,12 @@ func TestAveragePrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
 		})
-		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
@@ -79,17 +79,17 @@ func TestMedianPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
 		})
-		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10010),
 			},
 		})
-		api.store.Store("bybit:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("bybit:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10020),
 			},
@@ -106,12 +106,12 @@ func TestMedianPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
 		})
-		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10010),
 			},
@@ -128,7 +128,7 @@ func TestMedianPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
@@ -145,7 +145,7 @@ func TestMedianPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
@@ -164,12 +164,12 @@ func TestMinPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
 		})
-		api.store.Store("okx:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10010),
 			},
@@ -186,7 +186,7 @@ func TestMinPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
@@ -203,7 +203,7 @@ func TestMinPrice(t *testing.T) {
 			store: memory,
 		}
 
-		api.store.Store("binance:BTCUSDT", connector.TickerUpdate{
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
 			Spot: &connector.SpotPriceUpdate{
 				Price: big.NewFloat(10000),
 			},
