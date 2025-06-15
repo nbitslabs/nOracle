@@ -4,23 +4,8 @@ exchanges:
     symbols:
       - BTCUSDT
       - ETHUSDT
-  - name: okx
-    url: wss://ws.okx.com:8443
-    symbols:
-      - BTC-USDT
-      - ETH-USDT
   - name: bybit
     url: wss://stream.bybit.com
     symbols:
       - BTCUSDT
       - ETHUSDT
-  - name: coinbase
-    url: wss://ws-feed.exchange.coinbase.com
-    symbols:
-      - BTC-USDT
-      - ETH-USDT
-  - name: upbit
-    url: wss://api.upbit.com/websocket/v1
-    symbols:
-      - USDT-BTC
-      - USDT-ETH
