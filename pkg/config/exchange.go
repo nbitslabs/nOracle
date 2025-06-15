@@ -9,12 +9,12 @@ import (
 	"github.com/nbitslabs/nOracle/pkg/connector/bybit"
 )
 
-func LoadConnector(ctx context.Context, exchange string, url string, symbols []string) (connector.ExchangeConnector, error) {
+func LoadConnector(ctx context.Context, exchange string, symbols []string) (connector.ExchangeConnector, error) {
 	switch exchange {
 	case "binance":
-		return binance.NewConnector(ctx, url, symbols)
+		return binance.NewConnector(ctx, symbols)
 	case "bybit":
-		return bybit.NewConnector(ctx, url, symbols)
+		return bybit.NewConnector(ctx, symbols)
 	default:
 		return nil, fmt.Errorf("unknown exchange: %s", exchange)
 	}

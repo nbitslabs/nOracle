@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "info",
+    srcs = ["handler.go"],
+    importpath = "github.com/nbitslabs/nOracle/internal/route/info",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/oracle",
+        "@com_github_gin_gonic_gin//:gin",
+    ],
+)

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nbitslabs/nOracle/internal/oracle"
+	"github.com/nbitslabs/nOracle/internal/route/info"
 	"github.com/nbitslabs/nOracle/internal/route/ticker"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 	"github.com/nbitslabs/nOracle/pkg/storage"
@@ -44,9 +45,11 @@ func main() {
 
 	// Initialize APIs
 	tickerAPI := ticker.NewAPI(ctx, tickerStore, out)
+	infoAPI := info.NewAPI(ctx, service.Info)
 
 	router := gin.Default()
 	tickerAPI.Routes(router)
+	infoAPI.Routes(router)
 
 	slog.Info("nOracle started")
 	go func() {

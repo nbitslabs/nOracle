@@ -1,11 +1,9 @@
 exchanges:
   - name: binance
-    url: wss://stream.binance.com:443
     symbols:
       - BTCUSDT
       - ETHUSDT
   - name: bybit
-    url: wss://stream.bybit.com
     symbols:
       - BTCUSDT
       - ETHUSDT

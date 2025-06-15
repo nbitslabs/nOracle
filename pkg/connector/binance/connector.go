@@ -11,10 +11,7 @@ import (
 	"github.com/nbitslabs/nOracle/pkg/connector"
 )
 
-func NewConnector(ctx context.Context, wsUrl string, pairs []string) (connector.ExchangeConnector, error) {
-	if wsUrl == "" {
-		return nil, fmt.Errorf("wsUrl is required")
-	}
+func NewConnector(ctx context.Context, pairs []string) (connector.ExchangeConnector, error) {
 	if len(pairs) == 0 {
 		return nil, fmt.Errorf("pairs are required")
 	}
