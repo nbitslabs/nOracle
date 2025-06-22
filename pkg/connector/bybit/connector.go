@@ -46,24 +46,14 @@ func (c *Connector) Close() error {
 }
 
 func (c *Connector) StreamTickers(ctx context.Context, out chan<- connector.TickerUpdate) error {
-	ws := bybit.NewWebsocketClient()
-
-	spot, err := c.streamSpot(ctx, ws, out)
-	if err != nil {
+	if err := c.streamSpot(ctx, out); err != nil {
 		return err
 	}
 
-	futures, err := c.streamFutures(ctx, ws, out)
-	if err != nil {
+	if err := c.streamFutures(ctx, out); err != nil {
 		return err
 	}
 
-	executors := []bybit.WebsocketExecutor{
-		spot,
-		futures,
-	}
-
-	ws.Start(ctx, executors)
 	return nil
 }
 
@@ -75,10 +65,11 @@ func (c *Connector) Tickers() []string {
 	return c.pairs
 }
 
-func (c *Connector) streamSpot(ctx context.Context, ws *bybit.WebSocketClient, out chan<- connector.TickerUpdate) (bybit.V5WebsocketPublicServiceI, error) {
+func (c *Connector) streamSpot(ctx context.Context, out chan<- connector.TickerUpdate) error {
+	ws := bybit.NewWebsocketClient()
 	svc, err := ws.V5().Public(bybit.CategoryV5Spot)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
@@ -107,16 +98,19 @@ func (c *Connector) streamSpot(ctx context.Context, ws *bybit.WebSocketClient, o
 		}
 		return nil
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
-	return svc, nil
+	ws.Start(ctx, []bybit.WebsocketExecutor{svc})
+
+	return nil
 }
 
-func (c *Connector) streamFutures(ctx context.Context, ws *bybit.WebSocketClient, out chan<- connector.TickerUpdate) (bybit.V5WebsocketPublicServiceI, error) {
+func (c *Connector) streamFutures(ctx context.Context, out chan<- connector.TickerUpdate) error {
+	ws := bybit.NewWebsocketClient()
 	svc, err := ws.V5().Public(bybit.CategoryV5Linear)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
@@ -152,8 +146,10 @@ func (c *Connector) streamFutures(ctx context.Context, ws *bybit.WebSocketClient
 		}
 		return nil
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
-	return svc, nil
+	ws.Start(ctx, []bybit.WebsocketExecutor{svc})
+
+	return nil
 }
