@@ -124,6 +124,10 @@ func (c *Connector) streamFutures(ctx context.Context, out chan<- connector.Tick
 				c.fCache[symbol].Data.FundingRate = res.Data.FundingRate
 			}
 
+			// update cache
+			c.fCache[symbol].Cs = res.Cs
+			c.fCache[symbol].Ts = res.Ts
+
 			out <- connector.TickerUpdate{
 				Exchange: Name,
 				Symbol:   symbol,
