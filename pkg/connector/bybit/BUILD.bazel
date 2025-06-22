@@ -10,6 +10,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//pkg/connector",
-        "@com_github_hirokisan_bybit_v2//:bybit",
+        "@com_github_bybit_exchange_bybit_go_api//:bybit_go_api",
     ],
 )

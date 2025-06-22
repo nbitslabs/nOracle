@@ -2,10 +2,10 @@ package bybit
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"math/big"
 
-	"github.com/hirokisan/bybit/v2"
+	bybit "github.com/bybit-exchange/bybit.go.api"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 )
 
@@ -15,7 +15,9 @@ type Connector struct {
 	ctx   context.Context
 	pairs []string
 
-	tickers []bybit.V5WebsocketPublicTickerParamKey
+	args []string
+
+	fCache map[string]*FuturesTickerResponse
 }
 
 func NewConnector(ctx context.Context, pairs []string) (connector.ExchangeConnector, error) {
@@ -23,17 +25,16 @@ func NewConnector(ctx context.Context, pairs []string) (connector.ExchangeConnec
 		return nil, fmt.Errorf("pairs are required")
 	}
 
-	tickers := make([]bybit.V5WebsocketPublicTickerParamKey, 0, len(pairs))
+	args := make([]string, 0, len(pairs))
 	for _, pair := range pairs {
-		tickers = append(tickers, bybit.V5WebsocketPublicTickerParamKey{
-			Symbol: bybit.SymbolV5(pair),
-		})
+		args = append(args, "tickers."+pair)
 	}
 
 	return &Connector{
-		ctx:     ctx,
-		pairs:   pairs,
-		tickers: tickers,
+		ctx:    ctx,
+		pairs:  pairs,
+		args:   args,
+		fCache: make(map[string]*FuturesTickerResponse),
 	}, nil
 }
 
@@ -66,90 +67,81 @@ func (c *Connector) Tickers() []string {
 }
 
 func (c *Connector) streamSpot(ctx context.Context, out chan<- connector.TickerUpdate) error {
-	ws := bybit.NewWebsocketClient()
-	svc, err := ws.V5().Public(bybit.CategoryV5Spot)
-	if err != nil {
+	client := bybit.NewBybitPublicWebSocket("wss://stream.bybit.com/v5/public/spot",
+		bybit.MessageHandler(func(message string) error {
+			var res SpotTickerResponse
+			if err := json.Unmarshal([]byte(message), &res); err != nil {
+				return err
+			}
+
+			out <- connector.TickerUpdate{
+				Exchange: Name,
+				Symbol:   res.Data.Symbol,
+				Spot: &connector.SpotPriceUpdate{
+					Price:  res.Data.LastPrice,
+					Volume: res.Data.Volume24H,
+				},
+				Timestamp: res.Ts,
+			}
+
+			return nil
+		}))
+
+	ws := client.Connect()
+	if _, err := ws.SendSubscription(c.args); err != nil {
 		return err
 	}
-
-	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
-		data := res.Data.Spot
-		if data.Symbol == "" {
-			return fmt.Errorf("received empty ticker data")
-		}
-
-		price, ok := big.NewFloat(0).SetString(data.LastPrice)
-		if !ok {
-			return fmt.Errorf("error parsing price")
-		}
-		volume, ok := big.NewFloat(0).SetString(data.Volume24H)
-		if !ok {
-			return fmt.Errorf("error parsing volume")
-		}
-
-		out <- connector.TickerUpdate{
-			Exchange: Name,
-			Symbol:   string(data.Symbol),
-			Spot: &connector.SpotPriceUpdate{
-				Price:  price,
-				Volume: volume,
-			},
-			Timestamp: res.TimeStamp,
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	ws.Start(ctx, []bybit.WebsocketExecutor{svc})
 
 	return nil
 }
 
 func (c *Connector) streamFutures(ctx context.Context, out chan<- connector.TickerUpdate) error {
-	ws := bybit.NewWebsocketClient()
-	svc, err := ws.V5().Public(bybit.CategoryV5Linear)
-	if err != nil {
+	client := bybit.NewBybitPublicWebSocket("wss://stream.bybit.com/v5/public/linear",
+		bybit.MessageHandler(func(message string) error {
+			var res FuturesTickerResponse
+			if err := json.Unmarshal([]byte(message), &res); err != nil {
+				return err
+			}
+
+			symbol := res.Data.Symbol
+			if _, ok := c.fCache[symbol]; !ok {
+				c.fCache[symbol] = &res
+			}
+
+			if res.Data.LastPrice != nil {
+				c.fCache[symbol].Data.LastPrice = res.Data.LastPrice
+			}
+			if res.Data.MarkPrice != nil {
+				c.fCache[symbol].Data.MarkPrice = res.Data.MarkPrice
+			}
+			if res.Data.IndexPrice != nil {
+				c.fCache[symbol].Data.IndexPrice = res.Data.IndexPrice
+			}
+			if res.Data.Volume24H != nil {
+				c.fCache[symbol].Data.Volume24H = res.Data.Volume24H
+			}
+			if res.Data.FundingRate != nil {
+				c.fCache[symbol].Data.FundingRate = res.Data.FundingRate
+			}
+
+			out <- connector.TickerUpdate{
+				Exchange: Name,
+				Symbol:   symbol,
+				Futures: &connector.FuturesPriceUpdate{
+					MarkPrice:   c.fCache[symbol].Data.MarkPrice,
+					IndexPrice:  c.fCache[symbol].Data.IndexPrice,
+					FundingRate: c.fCache[symbol].Data.FundingRate,
+				},
+				Timestamp: res.Ts,
+			}
+
+			return nil
+		}))
+
+	ws := client.Connect()
+	if _, err := ws.SendSubscription(c.args); err != nil {
 		return err
 	}
-
-	if _, err := svc.SubscribeTickers(c.tickers, func(res bybit.V5WebsocketPublicTickerResponse) error {
-		data := res.Data.LinearInverse
-		if data.Symbol == "" {
-			return fmt.Errorf("received empty ticker data")
-		}
-
-		mp, ok := big.NewFloat(0).SetString(data.MarkPrice)
-		if !ok {
-			return fmt.Errorf("error parsing price")
-		}
-
-		ip, ok := big.NewFloat(0).SetString(data.IndexPrice)
-		if !ok {
-			return fmt.Errorf("error parsing index price")
-		}
-
-		fr, ok := big.NewFloat(0).SetString(data.FundingRate)
-		if !ok {
-			return fmt.Errorf("error parsing funding rate")
-		}
-
-		out <- connector.TickerUpdate{
-			Exchange:  Name,
-			Symbol:    string(data.Symbol),
-			Timestamp: res.TimeStamp,
-			Futures: &connector.FuturesPriceUpdate{
-				MarkPrice:   mp,
-				IndexPrice:  ip,
-				FundingRate: fr,
-			},
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	ws.Start(ctx, []bybit.WebsocketExecutor{svc})
 
 	return nil
 }
