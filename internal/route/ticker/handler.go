@@ -36,7 +36,7 @@ func NewAPI(ctx context.Context, store storage.Operations[connector.TickerUpdate
 
 func (a *API) Routes(r *gin.Engine) {
 	r.GET("/ticker/:trading/:exchange/:symbol", a.GetTicker)
-	r.GET("/price/:method/:symbol", a.GetPrice)
+	r.GET("/price/:trading/:method/:symbol", a.GetPrice)
 }
 
 func (a *API) GetTicker(c *gin.Context) {
@@ -55,6 +55,7 @@ func (a *API) GetTicker(c *gin.Context) {
 }
 
 func (a *API) GetPrice(c *gin.Context) {
+	trading := c.Param("trading")
 	method := c.Param("method")
 	symbol := c.Param("symbol")
 	exchanges := c.QueryArray("exchange")
@@ -68,11 +69,11 @@ func (a *API) GetPrice(c *gin.Context) {
 	var err error
 	switch method {
 	case "average":
-		price, err = a.averagePrice(symbol, exchanges)
+		price, err = a.averagePrice(symbol, exchanges, trading)
 	case "median":
-		price, err = a.medianPrice(symbol, exchanges)
+		price, err = a.medianPrice(symbol, exchanges, trading)
 	case "min":
-		price, err = a.minPrice(symbol, exchanges)
+		price, err = a.minPrice(symbol, exchanges, trading)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
 		return
@@ -110,16 +111,22 @@ func (a *API) manageStore() {
 	}
 }
 
-func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error) {
+func (a *API) averagePrice(symbol string, exchanges []string, trading string) (*big.Float, error) {
 	total := big.NewFloat(0)
 	count := 0
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		total.Add(total, ticker.Spot.Price)
-		count++
+
+		if trading == "spot" {
+			total.Add(total, ticker.Spot.Price)
+			count++
+		} else {
+			total.Add(total, ticker.Futures.IndexPrice)
+			count++
+		}
 	}
 
 	average := total.Quo(total, big.NewFloat(float64(count)))
@@ -127,14 +134,19 @@ func (a *API) averagePrice(symbol string, exchanges []string) (*big.Float, error
 	return average, nil
 }
 
-func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error) {
+func (a *API) medianPrice(symbol string, exchanges []string, trading string) (*big.Float, error) {
 	prices := []*big.Float{}
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		prices = append(prices, ticker.Spot.Price)
+
+		if trading == "spot" {
+			prices = append(prices, ticker.Spot.Price)
+		} else {
+			prices = append(prices, ticker.Futures.IndexPrice)
+		}
 	}
 
 	sort.Slice(prices, func(i, j int) bool {
@@ -150,15 +162,24 @@ func (a *API) medianPrice(symbol string, exchanges []string) (*big.Float, error)
 	}
 }
 
-func (a *API) minPrice(symbol string, exchanges []string) (*big.Float, error) {
+func (a *API) minPrice(symbol string, exchanges []string, trading string) (*big.Float, error) {
 	min := big.NewFloat(math.MaxFloat64)
+
+	isSpot := trading == "spot"
 	for _, exchange := range exchanges {
-		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:spot", exchange, symbol))
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
 		if err != nil {
 			return nil, fmt.Errorf("ticker not found: %w", err)
 		}
-		if ticker.Spot.Price.Cmp(min) < 0 {
-			min = ticker.Spot.Price
+
+		if isSpot {
+			if ticker.Spot.Price.Cmp(min) < 0 {
+				min = ticker.Spot.Price
+			}
+		} else {
+			if ticker.Futures.IndexPrice.Cmp(min) < 0 {
+				min = ticker.Futures.IndexPrice
+			}
 		}
 	}
 

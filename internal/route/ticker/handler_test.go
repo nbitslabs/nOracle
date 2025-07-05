@@ -27,7 +27,7 @@ func TestAveragePrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx"}, "spot")
 		assert.NoError(t, err)
 		assert.Equal(t, big.NewFloat(10005), price)
 	})
@@ -44,7 +44,7 @@ func TestAveragePrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx", "bybit"})
+		price, err := api.averagePrice("BTCUSDT", []string{"binance", "okx", "bybit"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -66,7 +66,7 @@ func TestAveragePrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.averagePrice("ETHUSDT", []string{"binance", "okx"})
+		price, err := api.averagePrice("ETHUSDT", []string{"binance", "okx"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -95,7 +95,7 @@ func TestMedianPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx", "bybit"})
+		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx", "bybit"}, "spot")
 		assert.NoError(t, err)
 		assert.Equal(t, big.NewFloat(10010), price)
 	})
@@ -117,7 +117,7 @@ func TestMedianPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
 		assert.NoError(t, err)
 		assert.Equal(t, big.NewFloat(10005), price)
 	})
@@ -134,7 +134,7 @@ func TestMedianPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.medianPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -151,7 +151,7 @@ func TestMedianPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.medianPrice("ETHUSDT", []string{"binance"})
+		price, err := api.medianPrice("ETHUSDT", []string{"binance"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -175,7 +175,7 @@ func TestMinPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
 		assert.NoError(t, err)
 		assert.Equal(t, big.NewFloat(10000), price)
 	})
@@ -192,7 +192,7 @@ func TestMinPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"})
+		price, err := api.minPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
@@ -209,7 +209,7 @@ func TestMinPrice(t *testing.T) {
 			},
 		})
 
-		price, err := api.minPrice("ETHUSDT", []string{"binance"})
+		price, err := api.minPrice("ETHUSDT", []string{"binance"}, "spot")
 		assert.Error(t, err)
 		assert.Nil(t, price)
 	})
