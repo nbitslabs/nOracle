@@ -18,11 +18,15 @@ go_library(
 
 go_test(
     name = "ticker_test",
-    srcs = ["calculation_test.go"],
+    srcs = [
+        "calculation_test.go",
+        "handler_test.go",
+    ],
     embed = [":ticker"],
     deps = [
         "//pkg/connector",
         "//pkg/storage",
+        "@com_github_gin_gonic_gin//:gin",
         "@com_github_stretchr_testify//assert",
     ],
 )

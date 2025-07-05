@@ -37,9 +37,9 @@ func (a *API) Routes(r *gin.Engine) {
 }
 
 func (a *API) GetTicker(c *gin.Context) {
-	exchange := c.Param("exchange")
-	symbol := c.Param("symbol")
-	trading := c.Param("trading")
+	exchange := strings.ToLower(c.Param("exchange"))
+	symbol := strings.ToLower(c.Param("symbol"))
+	trading := strings.ToLower(c.Param("trading"))
 
 	key := strings.ToLower(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
 	ticker, err := a.store.Get(key)
@@ -52,9 +52,9 @@ func (a *API) GetTicker(c *gin.Context) {
 }
 
 func (a *API) GetPrice(c *gin.Context) {
-	trading := c.Param("trading")
-	method := c.Param("method")
-	symbol := c.Param("symbol")
+	trading := strings.ToLower(c.Param("trading"))
+	method := strings.ToLower(c.Param("method"))
+	symbol := strings.ToLower(c.Param("symbol"))
 	exchanges := c.QueryArray("exchange")
 
 	if len(exchanges) == 0 {
