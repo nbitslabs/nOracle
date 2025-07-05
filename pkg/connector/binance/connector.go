@@ -5,11 +5,21 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
+	"time"
 
 	"github.com/adshao/go-binance/v2"
 	"github.com/adshao/go-binance/v2/futures"
 	"github.com/nbitslabs/nOracle/pkg/connector"
 )
+
+func init() {
+	// https://github.com/ccxt/go-binance/pull/671#issuecomment-2783534054
+	binance.WebsocketKeepalive = true
+	binance.WebsocketTimeout = time.Second * 600
+
+	futures.WebsocketKeepalive = true
+	futures.WebsocketTimeout = time.Second * 600
+}
 
 func NewConnector(ctx context.Context, pairs []string) (connector.ExchangeConnector, error) {
 	if len(pairs) == 0 {
