@@ -1,5 +1,7 @@
 # nOracle
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/nbitslabs/nOracle)](https://goreportcard.com/report/github.com/nbitslabs/nOracle)
+
 ## 📦 Requirements
 
 - [Go](https://golang.org/doc/install)
