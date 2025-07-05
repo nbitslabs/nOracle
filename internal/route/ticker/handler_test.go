@@ -214,3 +214,62 @@ func TestMinPrice(t *testing.T) {
 		assert.Nil(t, price)
 	})
 }
+
+func TestMaxPrice(t *testing.T) {
+	t.Run("BTCUSDT max price", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
+		})
+
+		api.store.Store("okx:BTCUSDT:spot", connector.TickerUpdate{
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10010),
+			},
+		})
+
+		price, err := api.maxPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
+		assert.NoError(t, err)
+		assert.Equal(t, big.NewFloat(10010), price)
+	})
+
+	t.Run("Exchange not found", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
+		})
+
+		price, err := api.maxPrice("BTCUSDT", []string{"binance", "okx"}, "spot")
+		assert.Error(t, err)
+		assert.Nil(t, price)
+	})
+
+	t.Run("Symbol not found", func(t *testing.T) {
+		memory := storage.NewMemory[connector.TickerUpdate]()
+		api := &API{
+			store: memory,
+		}
+
+		api.store.Store("binance:BTCUSDT:spot", connector.TickerUpdate{
+			Spot: &connector.SpotPriceUpdate{
+				Price: big.NewFloat(10000),
+			},
+		})
+
+		price, err := api.maxPrice("ETHUSDT", []string{"binance"}, "spot")
+		assert.Error(t, err)
+		assert.Nil(t, price)
+	})
+}

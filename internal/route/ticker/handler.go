@@ -74,6 +74,8 @@ func (a *API) GetPrice(c *gin.Context) {
 		price, err = a.medianPrice(symbol, exchanges, trading)
 	case "min":
 		price, err = a.minPrice(symbol, exchanges, trading)
+	case "max":
+		price, err = a.maxPrice(symbol, exchanges, trading)
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid method"})
 		return
@@ -184,4 +186,28 @@ func (a *API) minPrice(symbol string, exchanges []string, trading string) (*big.
 	}
 
 	return min, nil
+}
+
+func (a *API) maxPrice(symbol string, exchanges []string, trading string) (*big.Float, error) {
+	max := big.NewFloat(math.SmallestNonzeroFloat64)
+
+	isSpot := trading == "spot"
+	for _, exchange := range exchanges {
+		ticker, err := a.store.Get(fmt.Sprintf("%s:%s:%s", exchange, symbol, trading))
+		if err != nil {
+			return nil, fmt.Errorf("ticker not found: %w", err)
+		}
+
+		if isSpot {
+			if ticker.Spot.Price.Cmp(max) > 0 {
+				max = ticker.Spot.Price
+			}
+		} else {
+			if ticker.Futures.IndexPrice.Cmp(max) > 0 {
+				max = ticker.Futures.IndexPrice
+			}
+		}
+	}
+
+	return max, nil
 }
