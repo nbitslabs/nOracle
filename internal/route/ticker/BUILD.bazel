@@ -2,7 +2,11 @@ load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "ticker",
-    srcs = ["handler.go"],
+    srcs = [
+        "calculation.go",
+        "handler.go",
+        "store.go",
+    ],
     importpath = "github.com/nbitslabs/nOracle/internal/route/ticker",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -14,7 +18,7 @@ go_library(
 
 go_test(
     name = "ticker_test",
-    srcs = ["handler_test.go"],
+    srcs = ["calculation_test.go"],
     embed = [":ticker"],
     deps = [
         "//pkg/connector",
